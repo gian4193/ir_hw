@@ -8,6 +8,7 @@ class Article(models.Model):
     character_conut = models.IntegerField(null=True)
     word_count = models.IntegerField(null=True)
     sentence_count = models.IntegerField(null=True)
+    
 
     def __str__(self):
         return self.name
@@ -15,9 +16,12 @@ class Article(models.Model):
 class Inverted_index(models.Model):
     word = models.CharField(max_length=50)
     position = models.IntegerField()
-    article = models.ForeignKey(Article,on_delete=models.CASCADE)
+    article = models.ForeignKey(Article,on_delete=models.CASCADE,null=True)
     
     
 
     def __str__(self):
         return self.word
+    
+    class Ｍeta :
+        ordering = ['word','article','position',]
