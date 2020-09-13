@@ -79,7 +79,7 @@ def muti_pos(request) :
                 if word_key in article_value :
                     article_value[word_key] = str(article_value[word_key]) +"," +str(result[1])
                 else :
-                    article_value[word_key] = result[1]
+                    article_value[word_key] = str(result[1])
 
             else :
                 article_dic[article_key] = {}
