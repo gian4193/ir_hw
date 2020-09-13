@@ -70,6 +70,7 @@ def muti_pos(request) :
 
         result_data=[]
         article_dic ={} #{title : {word : position }}  #相同title word 的資料放一起
+        title_id = {}
         for result in results: 
             article_key = result[2]  
             word_key = result[0]
@@ -82,7 +83,8 @@ def muti_pos(request) :
 
             else :
                 article_dic[article_key] = {}
-                article_dic[article_key][word_key] = result[1]
+                title_id[article_key] = result[3]
+                article_dic[article_key][word_key] = str(result[1])
 
         key = 1
         for t in article_dic.items():
@@ -94,6 +96,7 @@ def muti_pos(request) :
                     "position" : v[1],
                     "title" : t[0],
                     "key" : key,
+                    "article_id" : title_id[t[0]],
                 }
                 key += 1
                 result_data.append(data)
