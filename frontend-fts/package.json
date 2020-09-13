@@ -4,12 +4,6 @@
   "private": true,
   "dependencies": {
     "@coreui/coreui": "^3.3.0",
-    "@progress/kendo-data-query": "^1.5.4",
-    "@progress/kendo-react-data-tools": "^3.16.0",
-    "@progress/kendo-react-dropdowns": "^3.16.0",
-    "@progress/kendo-react-grid": "^3.16.0",
-    "@progress/kendo-react-inputs": "^3.16.0",
-    "@progress/kendo-react-intl": "^3.16.0",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
     "@testing-library/user-event": "^7.2.1",
