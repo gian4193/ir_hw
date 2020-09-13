@@ -5,6 +5,8 @@
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
+full_text_search/__pycache__/
+.vscode
 *.py[cod]
 *$py.class
 
