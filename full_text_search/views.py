@@ -9,6 +9,8 @@ import nltk
 import re
 from django.views.decorators.csrf import csrf_exempt
 import string
+import json
+import urllib
 ps = nltk.PorterStemmer()
 nltk.download('punkt')
 # Create your views here.
@@ -123,14 +125,39 @@ def process_xml(file_name):
                                 )
             ArticleList.append(insert_data)
     Article.objects.bulk_create(ArticleList)
+
+def process_json(file_name):
+    input_file = open ('file/'+file_name)
+    json_array = json.load(input_file)
+    Inverted_index.objects.all().delete()
+    Article.objects.all().delete()
+    ArticleList = []
+    print(len(json_array))
+    for item in json_array :
+        print("****************")
+        tweet = item['tweet']
+        name = item['name']
+        count_arr = articel_sentences_words_chars(tweet.strip())
+        insert_data = Article(  name=name,
+                                content=tweet.strip(),
+                                character_conut=count_arr['char_count'],
+                                word_count = count_arr['word_count'],
+                                sentence_count = count_arr['sent_count']
+                            )
+        ArticleList.append(insert_data)
+    Article.objects.bulk_create(ArticleList)
+
+
 def create_inverted_index():
     inverted_index_list = []
     for article in Article.objects.all():
         contents = re.sub(r'["\',();\[\]]','',article.content)
         contents = contents.strip(string.punctuation)
-        contents = re.sub(r'\.+ ', ' ', contents).split()
+        contents = contents.split()
         word_index = 1
         for word in contents:
+            if len(word) > 1 and word[-1] == '.' :
+                word = word[0:-1]
             word = ps.stem(word)
             insert_data = Inverted_index(
                 word = word,
@@ -182,7 +209,11 @@ def upload_file (request):
         for chunk in files.chunks():
                 f.write(chunk)
         f.close()
-        process_xml(files.name)
+        arr = files.name.split('.')
+        if arr[1] == 'xml' :
+            process_xml(files.name)
+        elif arr[1] == 'json' :
+            process_json(files.name)
         create_inverted_index()
 
         return HttpResponse('ok')
@@ -200,6 +231,8 @@ def all_contents (request) :
 def get_position(request):
     if request.method == "GET" :
         keyword = request.GET['keyword']
+        keyword = urllib.parse.unquote(keyword)
+        print("*******"+keyword)
         keyword = ps.stem(keyword)
         cursor = connection.cursor()
         cursor.execute("""

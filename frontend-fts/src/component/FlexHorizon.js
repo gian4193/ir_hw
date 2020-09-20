@@ -2,7 +2,7 @@ import React from 'react'
 
 export const FlexHorizon = (props) => {
     return (
-        <div className="flex-horizon">
+        <div className="flex-horizontal">
             {props.children}
         </div>
     )

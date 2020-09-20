@@ -61,19 +61,21 @@ const MySearch = () => {
     const [data, setData] = useState([])
     const [array, setArray] = useState([])
     const [ignore, forceUpdate] = useReducer(x => x + 1, 0);
+    const [sents, setSents] = useState(0)
+    const [words, setＷords] = useState(0)
+    const [chars, setChars] = useState(0)
+    const [total, setTotal] = useState(0)
+    const [search_word, setSearch_word] = useState('?')
     useEffect(() => {
         load_data()
     }, [])
-    useEffect(() => {
-        change_view()
-    }, [data])
-    const change_view = () => {
+    const change_view = (d) => {
         let arr = [];
-        for (let d of data) {
+        for (let data of d) {
             arr.push(<div>
-                <Divider orientation="left">{d.name}</Divider>
+                <Divider orientation="left">{data.name}</Divider>
                 <p
-                    dangerouslySetInnerHTML={{ __html: d.content }}
+                    dangerouslySetInnerHTML={{ __html: data.content }}
                 >
                 </p>
             </div>)
@@ -84,20 +86,32 @@ const MySearch = () => {
         let d = (await Axios.get('/full_text_search/get_contents')).data
         //console.log(d)
         setData(d)
+        let sent = 0
+        let word = 0
+        let char = 0
+        for (let item of d) {
+            sent = sent + item.sentence_count
+            word = word + item.word_count
+            char = char + item.character_conut
+        }
+        setSents(sent)
+        setＷords(word)
+        setChars(char)
+        change_view(d)
     }
     const get_position = async (keyword) => {
-        for (let t of data) {
-            t.content.replace('<yellow-block>', '')
-        }
-        let tempData = [...data];
-        console.log(keyword)
-        let d = (await Axios.get('/full_text_search/get_position/?keyword=' + keyword)).data;
-        //console.log(d)
+        console.log(encodeURIComponent(keyword))
+        let tempData = JSON.parse(JSON.stringify(data))
+        let keyword_count = 0
+        let d = (await Axios.get('/full_text_search/get_position/?keyword=' + encodeURIComponent(keyword))).data;
+        console.log(d)
         for (let record of d) {
             let index = record.position.split(',')
-            let content = data.find(da => da.id === record.title).content.split(' ');
+            let content = data.find(da => da.id === record.title).content.split(/[ \n]+[\n]*/ig);
+            //console.log(content)
             //console.log(content)
             for (let i of index) {
+                keyword_count = keyword_count + 1
                 content[parseInt(i) - 1] = '<yellow-block>' + content[parseInt(i) - 1] + '</yellow-block>';
             }
             content = content.join(' ');
@@ -105,11 +119,20 @@ const MySearch = () => {
             let ind = data.findIndex(da => da.id === record.title);
             tempData[ind].content = content;
         }
-        setData(tempData)
+        setSearch_word(keyword)
+        setTotal(keyword_count)
+        change_view(tempData)
+
     }
     return (
         <div>
             <Search placeholder="input search text" onSearch={value => { get_position(value) }} enterButton />
+            <br /><br />
+            <div>
+                <p>
+                    總句數：{sents} , 總詞數：{words} , 總字數：{chars}, 總共搜尋到{total}個{search_word}
+                </p>
+            </div>
             <div>{array}</div>
         </div>
     )
