@@ -2,7 +2,15 @@ from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse
 from full_text_search.models import Article, Inverted_index
 from django.db import connection
+from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 import json
+import nltk
+import re
+from django.views.decorators.csrf import csrf_exempt
+import string
+ps = nltk.PorterStemmer()
+nltk.download('punkt')
 # Create your views here.
 def keyword(request):
     if request.method == "GET":
@@ -11,17 +19,6 @@ def keyword(request):
         except Exception as e:
             print(e)
             return HttpResponse("should include keyword")
-        #context_info = Inverted_index.objects.filter(word__contains=str(keyword).lower())
-        # article_list = []
-        # for index in range(0,len(context_info)):
-        #     index= int(index)
-        #     article = Article.objects.filter(id = context_info[index].article_id)
-        #     data={
-        #         "article" : context_info[index].article_id,
-        #         "position" : context_info[index].position,
-        #         "title" : article[0].name.strip(),
-        #     }
-        #     article_list.append(data)
         cursor = connection.cursor()
         cursor.execute("""
         SELECT a.word,a.position,b.name,b.id,a.id
@@ -103,6 +100,130 @@ def muti_pos(request) :
         return JsonResponse(result_data , safe=False)
     else :
         return HttpResponse("please use GET")
+
+
+def process_xml(file_name):
+    tree = ET.parse('file/'+file_name)
+    root = tree.getroot()
+    all_article = root.findall('./PubmedArticle')
+    Inverted_index.objects.all().delete()
+    Article.objects.all().delete()
+    print(len(all_article))
+    ArticleList = []
+    for article in all_article:
+        abstract = article.find('./MedlineCitation/Article/Abstract/AbstractText')
+        if abstract is not None :
+            title = article.find('./MedlineCitation/Article/ArticleTitle')
+            count_arr = articel_sentences_words_chars(abstract.text.strip())
+            insert_data = Article(  name=title.text.strip(),
+                                    content=abstract.text.strip(),
+                                    character_conut=count_arr['char_count'],
+                                    word_count = count_arr['word_count'],
+                                    sentence_count = count_arr['sent_count']
+                                )
+            ArticleList.append(insert_data)
+    Article.objects.bulk_create(ArticleList)
+def create_inverted_index():
+    inverted_index_list = []
+    for article in Article.objects.all():
+        contents = re.sub(r'["\',();\[\]]','',article.content)
+        contents = contents.strip(string.punctuation)
+        contents = re.sub(r'\.+ ', ' ', contents).split()
+        word_index = 1
+        for word in contents:
+            word = ps.stem(word)
+            insert_data = Inverted_index(
+                word = word,
+                position = word_index,
+                article_id = article.id
+            )
+            inverted_index_list.append(insert_data)
+            word_index += 1
+            if len(inverted_index_list) == 1000 :
+                Inverted_index.objects.bulk_create(inverted_index_list)
+                inverted_index_list=[]
+    if len(inverted_index_list) != 0 :
+        Inverted_index.objects.bulk_create(inverted_index_list)
+            
+        
+
+
+def articel_sentences_words_chars(text):
+    sentences = nltk.sent_tokenize(text)
+    json_conut={
+        'sent_count' : len(sentences),
+        'char_count' : len(text.replace(" ",'')),
+        'word_count' : len(text.split()),
+    }
+    return json_conut
+
+def abstract_info(text):
+    sentences = nltk.sent_tokenize(text)
+    sent_count = len(sentences)
+    token_arr = []
+    for sent in sentences:
+        sent = re.sub(r"[.,()]",'',sent)
+        tokens = sent.split(' ')
+        for token in tokens :
+            token_arr.append(ps.stem(token)+" , ")
+    word_count = len(token_arr)
+
+    token_arr.append(sent_count)
+    token_arr.append(" , ")
+    token_arr.append(word_count)
+    
+    return token_arr
+
+@csrf_exempt
+def upload_file (request):
+    if request.method == "POST" :
+        files = request.FILES.get('file')
+        f = open('file/' + files.name, 'wb+')
+        for chunk in files.chunks():
+                f.write(chunk)
+        f.close()
+        process_xml(files.name)
+        create_inverted_index()
+
+        return HttpResponse('ok')
+    else :
+        return HttpResponse("please use POST")
+
+def all_contents (request) :
+    if request.method == "GET" :
+        datas = list(Article.objects.values())
+        return JsonResponse(datas,safe=False)
+
+    else :
+        return HttpResponse("please use GET")
+
+def get_position(request):
+    if request.method == "GET" :
+        keyword = request.GET['keyword']
+        keyword = ps.stem(keyword)
+        cursor = connection.cursor()
+        cursor.execute("""
+        SELECT a.position,a.article_id
+        FROM full_text_search_inverted_index as a 
+        WHERE a.word = '%s' """%(keyword))
+        results = cursor.fetchall()
+        result_data ={}
+        for result in results:
+            article_name = result[1]
+            if article_name in result_data :
+                result_data[article_name] = str(result_data[article_name]) + "," + str(result[0])
+            else :
+                result_data[article_name] = str(result[0])
+        result_arr =[]
+        for r in result_data.items():
+            data ={
+                'title' : r[0],
+                'position' : r[1],
+            }
+            result_arr.append(data)
+        return JsonResponse(result_arr,safe=False)
+        return HttpResponse("please use GET")
+
     
 
 

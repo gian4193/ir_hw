@@ -1,11 +1,48 @@
 import React, { useState, useEffect, useReducer } from 'react';
 import './home.css';
-import { Table } from 'antd';
+import { Layout, Menu, Table } from 'antd';
 import HomeService from './home.service';
 import 'antd/dist/antd.css';
 import Search from 'antd/lib/input/Search';
+import { Route, useHistory } from 'react-router-dom';
+import { FlexHorizon } from '../component/FlexHorizon';
+import { SearchOutlined } from '@ant-design/icons';
+import { FulltextSearch } from './fullTextSearch/fullTextSearch';
+
 
 export const Home = () => {
+    let his = useHistory()
+    const jump = (e) => { his.push(e.key) }
+    return (
+        <Layout className="layout theme-light flex-vertical">
+            <FlexHorizon>
+                <SearchOutlined style={{ marginTop: '18px', width: '5%' }} onClick={() => { his.push("/") }} />
+                <Menu className='menu' mode='horizontal'>
+                    <Menu.Item key='/fts' onClick={jump}>FullTextSearch</Menu.Item>
+                </Menu>
+            </FlexHorizon>
+            <Route path='/fts' component={FulltextSearch}></Route>
+        </Layout>
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const Old = () => {
     const service = HomeService();
     const [data, setData] = useState([]); //[] 初始為空array
     const [ignore, forceUpdate] = useReducer(x => x + 1, 0); //畫面更新 useState 的變數沒改變時畫面不會更新

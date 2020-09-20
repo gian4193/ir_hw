@@ -1,12 +1,15 @@
 import React from 'react';
+import { BrowserRouter, Switch } from 'react-router-dom';
 import { Home } from './page/home';
 
 function App() {
   return (
-    <div>
+    <BrowserRouter>
+      <Switch>
         {/* todo: head */}
         <Home />
-    </div>
+      </Switch>
+    </BrowserRouter>
   );
 }
 
