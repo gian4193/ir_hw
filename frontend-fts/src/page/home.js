@@ -4,24 +4,29 @@ import { Layout, Menu, Table } from 'antd';
 import HomeService from './home.service';
 import 'antd/dist/antd.css';
 import Search from 'antd/lib/input/Search';
-import { Route, useHistory } from 'react-router-dom';
+import { Route, useHistory, Switch } from 'react-router-dom';
 import { FlexHorizon } from '../component/FlexHorizon';
 import { SearchOutlined } from '@ant-design/icons';
 import { FulltextSearch } from './fullTextSearch/fullTextSearch';
+import { Zipf } from './zipf/zipf'
 
 
 export const Home = () => {
     let his = useHistory()
     const jump = (e) => { his.push(e.key) }
     return (
-        <Layout className="layout theme-light flex-vertical">
+        <Layout className="layout flex-vertical">
             <FlexHorizon>
                 <SearchOutlined style={{ marginTop: '18px', width: '5%' }} onClick={() => { his.push("/") }} />
                 <Menu className='menu' mode='horizontal'>
                     <Menu.Item key='/fts' onClick={jump}>FullTextSearch</Menu.Item>
+                    <Menu.Item key='/zipf' onClick={jump}>zipf</Menu.Item>
                 </Menu>
             </FlexHorizon>
-            <Route path='/fts' component={FulltextSearch}></Route>
+            <Switch>
+                <Route exact path='/fts' component={FulltextSearch}></Route>
+                <Route exact path='/zipf' component={Zipf}></Route>
+            </Switch>
         </Layout>
     )
 }

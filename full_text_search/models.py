@@ -26,3 +26,19 @@ class Inverted_index(models.Model):
         ordering = ['word','article','position',]
 
 
+class Covid_article(models.Model):
+    title = models.CharField(max_length=100)
+    content = models.CharField(max_length=1000)
+
+class Word_frequency(models.Model):
+    article = models.IntegerField()
+    word = models.CharField(max_length=50)
+    occurrence = models.IntegerField()
+
+class Stem_frequency(models.Model):
+    article = models.IntegerField()
+    word = models.CharField(max_length=50)
+    occurrence = models.IntegerField()
+
+
+

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse
-from full_text_search.models import Article, Inverted_index
+from full_text_search.models import Article, Inverted_index ,Covid_article, Word_frequency, Stem_frequency
 from django.db import connection
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
@@ -11,6 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import string
 import json
 import urllib
+import numpy as np
 ps = nltk.PorterStemmer()
 nltk.download('punkt')
 # Create your views here.
@@ -113,12 +114,21 @@ def process_xml(file_name):
     print(len(all_article))
     ArticleList = []
     for article in all_article:
-        abstract = article.find('./MedlineCitation/Article/Abstract/AbstractText')
-        if abstract is not None :
+        abstract_text=''
+        abstracts = article.findall('./MedlineCitation/Article/Abstract/AbstractText')
+        if len(abstracts) != 0 :
             title = article.find('./MedlineCitation/Article/ArticleTitle')
-            count_arr = articel_sentences_words_chars(abstract.text.strip())
+            for index in range(0,len(abstracts)):
+                if abstracts[index].attrib.get("Label") is not None :
+                    if index == 0 :
+                        abstract_text = abstract_text + '<font-color>'+abstracts[index].attrib["Label"]+" :"+'</font-color> ' + abstracts[index].text.strip()+" "
+                    else :
+                        abstract_text = abstract_text + ' <font-color>'+abstracts[index].attrib["Label"]+" :"+'</font-color> ' + abstracts[index].text.strip()+" "
+                else :
+                    abstract_text = abstract_text +  abstracts[index].text.strip()+ " "
+            count_arr = articel_sentences_words_chars(abstract_text.strip())
             insert_data = Article(  name=title.text.strip(),
-                                    content=abstract.text.strip(),
+                                    content=abstract_text,
                                     character_conut=count_arr['char_count'],
                                     word_count = count_arr['word_count'],
                                     sentence_count = count_arr['sent_count']
@@ -134,9 +144,8 @@ def process_json(file_name):
     ArticleList = []
     print(len(json_array))
     for item in json_array :
-        print("****************")
-        tweet = item['tweet']
-        name = item['name']
+        tweet = item['tweet_text']
+        name = item['username']
         count_arr = articel_sentences_words_chars(tweet.strip())
         insert_data = Article(  name=name,
                                 content=tweet.strip(),
@@ -176,11 +185,17 @@ def create_inverted_index():
 
 
 def articel_sentences_words_chars(text):
+    text = text.replace("<font-color>"," ")
+    text = text.replace("</font-color>",' ')
     sentences = nltk.sent_tokenize(text)
+    word = 0
+    for i in sentences:
+        word = word+len([w for w in nltk.word_tokenize(i) if w not in string.punctuation])
+        print([w for w in nltk.word_tokenize(i) if w not in string.punctuation])
     json_conut={
         'sent_count' : len(sentences),
         'char_count' : len(text.replace(" ",'')),
-        'word_count' : len(text.split()),
+        'word_count' : word,
     }
     return json_conut
 
@@ -256,6 +271,88 @@ def get_position(request):
             result_arr.append(data)
         return JsonResponse(result_arr,safe=False)
         return HttpResponse("please use GET")
+
+
+
+def create_word_frequency_table(request):
+    if request.method == "GET" :
+        datas = Covid_article.objects.values()
+        for data in datas :
+            sentences = nltk.sent_tokenize(data['content'])
+            token_arr = []
+            stem_arr = []
+            for i in sentences:
+                for w in nltk.word_tokenize(i) :
+                    if w not in string.punctuation :
+                        token_arr.append(w)
+                        stem_arr.append(ps.stem(w))
+            token_arr = np.asarray(token_arr)
+            stem_arr = np.asarray(stem_arr)
+            unique, counts = np.unique(token_arr, return_counts=True)
+            stem_unique, stem_counts = np.unique(stem_arr, return_counts=True)
+            insert_list=[]
+            for j in range(0,len(unique)) :
+                insert_data = Word_frequency(
+                    word = unique[j],
+                    occurrence = counts[j],
+                    article = data['id']
+                )
+                insert_list.append(insert_data)
+                if len(insert_list) == 1000 :
+                    Word_frequency.objects.bulk_create(insert_list)
+                    insert_list=[]
+            if len(insert_list) != 0 :
+                Word_frequency.objects.bulk_create(insert_list)
+
+
+            stem_insert_list=[]
+            for j in range(0,len(stem_unique)) :
+                insert_data = Stem_frequency(
+                    word = stem_unique[j],
+                    occurrence = stem_counts[j],
+                    article = data['id']
+                )
+                stem_insert_list.append(insert_data)
+                if len(stem_insert_list) == 1000 :
+                    Stem_frequency.objects.bulk_create(stem_insert_list)
+                    stem_insert_list=[]
+            if len(stem_insert_list) != 0 :
+                Stem_frequency.objects.bulk_create(stem_insert_list)
+
+    
+        return HttpResponse("success")
+
+    else :
+        return HttpResponse("please use GET")
+
+
+def whole_database_frequency(request):
+    if request.method == "GET" :
+        datas = Word_frequency.objects.values()
+        data_dict = {}
+        for data in datas :
+            if data['word'] in data_dict :
+                data_dict[data['word']] = data_dict[data['word']] + data['occurrence']
+            else:
+                data_dict[data['word']] = data['occurrence']
+
+        data_dict = {k: v for k, v in sorted(data_dict.items(), key=lambda item: item[1],reverse=True)}
+        frequency_arr=[]
+        index = 0
+        for key in data_dict :
+            frequency_data = {
+                "index" : index,
+                "word" : key,
+                "number" : data_dict[key],
+            }
+            index += 1
+            frequency_arr.append(frequency_data)
+    
+        return JsonResponse(frequency_arr,safe=False)
+    else :
+        return HttpResponse("please use GET")
+
+
 
     
 

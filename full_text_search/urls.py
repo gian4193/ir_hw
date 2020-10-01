@@ -8,5 +8,7 @@ urlpatterns = [
     path('muti_position/',views.muti_pos),
     path('get_contents',views.all_contents),
     path('get_position/',views.get_position),
-    path('upload_file',views.upload_file)
+    path('upload_file',views.upload_file),
+    path('create_word_frequency_table',views.create_word_frequency_table),
+    path('whole_database_frequency',views.whole_database_frequency)
 ]

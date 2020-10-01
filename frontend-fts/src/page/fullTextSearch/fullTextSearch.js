@@ -73,12 +73,14 @@ const MySearch = () => {
         let arr = [];
         for (let data of d) {
             arr.push(<div>
-                <Divider orientation="left">{data.name}</Divider>
+                <Divider orientation="left" style={{ fontSize: "18px" }}>{data.name}</Divider>
                 <p
                     dangerouslySetInnerHTML={{ __html: data.content }}
                 >
                 </p>
-            </div>)
+                <br></br>
+            </div>
+            )
         }
         setArray(arr);
     }
@@ -101,19 +103,24 @@ const MySearch = () => {
     }
     const get_position = async (keyword) => {
         console.log(encodeURIComponent(keyword))
-        let tempData = JSON.parse(JSON.stringify(data))
+        let tempData = JSON.parse(JSON.stringify(data))  //deep copy
         let keyword_count = 0
         let d = (await Axios.get('/full_text_search/get_position/?keyword=' + encodeURIComponent(keyword))).data;
         console.log(d)
         for (let record of d) {
             let index = record.position.split(',')
             let content = data.find(da => da.id === record.title).content.split(/[ \n]+[\n]*/ig);
+            //let content = data.find(da => da.id === record.title).content.split(/[ ]/ig);
             //console.log(content)
             //console.log(content)
             for (let i of index) {
                 keyword_count = keyword_count + 1
                 content[parseInt(i) - 1] = '<yellow-block>' + content[parseInt(i) - 1] + '</yellow-block>';
             }
+            // for (let i = 0; i <= content.length - 1; i++) {
+            //     if (content[parseInt(i)].includes(":"))
+            //         content[parseInt(i)] = '\n' + '<h3>' + content[parseInt(i)] + '</h3>';
+            // }
             content = content.join(' ');
             //console.log(content)
             let ind = data.findIndex(da => da.id === record.title);
