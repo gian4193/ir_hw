@@ -1,19 +1,49 @@
 import React, { useEffect, useReducer, useState } from 'react'
 import Axios from 'axios'
-import { Route, useHistory } from 'react-router-dom';
+import { Route, useHistory, Switch } from 'react-router-dom';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import './zipf.css'
-import { Button, Drawer, Table } from 'antd'
+import { Button, Drawer, Table, Menu, Dropdown } from 'antd'
 
 export const Zipf = () => {
+    let his = useHistory()
+    const jump = (e) => { his.push(e.key) }
+    const menu = () => {
+        return (
+            <Menu>
+                <Menu.Item key='/whole_database' onClick={jump}>whole_database</Menu.Item>
+            </Menu>
+        )
+
+    }
+
+    return (
+        <div>
+            <Dropdown overlay={menu} placement="bottomCenter" arrow>
+                <Button>bottomCenter</Button>
+            </Dropdown>
+            <Switch>
+                <Route exact path='/whole_database' component={Whole_database}></Route>
+            </Switch>
+        </div>
+    )
+}
+
+
+const Whole_database = () => {
+
     const [data, setData] = useState([])
     const [visible, setVisible] = useState(false)
     const [drawerdata, setDrawerdata] = useState([])
-    useEffect(async () => {
+    useEffect(() => {
+        console.log("in whole_database")
+        load_data()
+    }, [])
+
+    const load_data = async () => {
         let d = (await Axios.get('/full_text_search/whole_database_frequency')).data
         setData(d)
-        console.log(d)
-    }, [])
+    }
 
     const customTooltip = (prop) => {
         const { active } = prop;
@@ -30,6 +60,10 @@ export const Zipf = () => {
         }
         return null;
     };
+
+
+
+
     const column = [
         { title: 'index', dataIndex: 'index' },
         { title: 'word', dataIndex: 'word' },
@@ -44,10 +78,13 @@ export const Zipf = () => {
         setVisible(false)
     };
 
+
     return (
 
         <div >
-            <br></br>
+            <p>test</p>
+
+            {/* <br></br>
             <Button type="primary" onClick={showDrawer}>
                 show top 100 words
             </Button>
@@ -69,7 +106,7 @@ export const Zipf = () => {
                 height={500}
             >
                 <Table columns={column} dataSource={drawerdata} size="small" />
-            </Drawer>
+            </Drawer> */}
         </div>
     )
 }

@@ -4,7 +4,7 @@ import { Layout, Menu, Table } from 'antd';
 import HomeService from './home.service';
 import 'antd/dist/antd.css';
 import Search from 'antd/lib/input/Search';
-import { Route, useHistory, Switch } from 'react-router-dom';
+import { Route, useHistory } from 'react-router-dom';
 import { FlexHorizon } from '../component/FlexHorizon';
 import { SearchOutlined } from '@ant-design/icons';
 import { FulltextSearch } from './fullTextSearch/fullTextSearch';
@@ -23,10 +23,8 @@ export const Home = () => {
                     <Menu.Item key='/zipf' onClick={jump}>zipf</Menu.Item>
                 </Menu>
             </FlexHorizon>
-            <Switch>
-                <Route exact path='/fts' component={FulltextSearch}></Route>
-                <Route exact path='/zipf' component={Zipf}></Route>
-            </Switch>
+            <Route path='/fts' component={FulltextSearch}></Route>
+            <Route path='/zipf' component={Zipf}></Route>
         </Layout>
     )
 }
