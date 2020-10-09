@@ -23,8 +23,10 @@ export const Home = () => {
                     <Menu.Item key='/zipf' onClick={jump}>zipf</Menu.Item>
                 </Menu>
             </FlexHorizon>
-            <Route path='/fts' component={FulltextSearch}></Route>
-            <Route path='/zipf' component={Zipf}></Route>
+            <div style={{ margin: '1% 5%' }} className='expand'>
+                <Route path='/fts' component={FulltextSearch}></Route>
+                <Route path='/zipf' component={Zipf}></Route>
+            </div>
         </Layout>
     )
 }

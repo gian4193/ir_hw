@@ -12,6 +12,11 @@ import string
 import json
 import urllib
 import numpy as np
+from spellchecker import SpellChecker
+from django.db.models import Q
+from functools import reduce
+
+nltk.download('stopwords')
 ps = nltk.PorterStemmer()
 nltk.download('punkt')
 # Create your views here.
@@ -275,6 +280,11 @@ def get_position(request):
 
 
 def create_word_frequency_table(request):
+    nltk_stopwords = nltk.corpus.stopwords.words('english')
+    for i in string.punctuation :
+        nltk_stopwords.append(i)
+    print(nltk_stopwords)
+
     if request.method == "GET" :
         datas = Covid_article.objects.values()
         for data in datas :
@@ -283,7 +293,8 @@ def create_word_frequency_table(request):
             stem_arr = []
             for i in sentences:
                 for w in nltk.word_tokenize(i) :
-                    if w not in string.punctuation :
+                    w = w.lower()
+                    if w not in nltk_stopwords :
                         token_arr.append(w)
                         stem_arr.append(ps.stem(w))
             token_arr = np.asarray(token_arr)
@@ -345,6 +356,8 @@ def whole_database_frequency(request):
                 "word" : key,
                 "number" : data_dict[key],
             }
+            if data_dict[key] < 11 :
+                break
             index += 1
             frequency_arr.append(frequency_data)
     
@@ -353,7 +366,141 @@ def whole_database_frequency(request):
         return HttpResponse("please use GET")
 
 
+def stem_database_frequency(request):
+    if request.method == "GET" :
+        datas = Stem_frequency.objects.values()
+        data_dict = {}
+        for data in datas :
+            if data['word'] in data_dict :
+                data_dict[data['word']] = data_dict[data['word']] + data['occurrence']
+            else:
+                data_dict[data['word']] = data['occurrence']
 
+        data_dict = {k: v for k, v in sorted(data_dict.items(), key=lambda item: item[1],reverse=True)}
+        frequency_arr=[]
+        index = 0
+        for key in data_dict :
+            frequency_data = {
+                "index" : index,
+                "word" : key,
+                "number" : data_dict[key],
+            }
+            index += 1
+            frequency_arr.append(frequency_data)
     
+        return JsonResponse(frequency_arr,safe=False)
+    else :
+        return HttpResponse("please use GET")
+
+def stem_and_origin_frequency(request):
+    if request.method == "GET" :
+        #stem_data
+        datas = Stem_frequency.objects.values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+
+        #origin_data
+        datas = Word_frequency.objects.values()
+        data_dict = {}
+        for data in datas :
+            if data['word'] in data_dict :
+                data_dict[data['word']] = data_dict[data['word']] + data['occurrence']
+            else:
+                data_dict[data['word']] = data['occurrence']
+
+        data_dict = {k: v for k, v in sorted(data_dict.items(), key=lambda item: item[1],reverse=True)}
+
+
+        frequency_arr=[]
+        index = 0
+        for key in data_dict :
+            insert_data ={
+                "index" : index,
+                "word" : key,
+                "number" : data_dict[key],
+            }
+            index+=1
+            frequency_arr.append(insert_data)
+        
+        index = 0
+        for key in stem_data_dict :
+            frequency_arr[index]['stem_word'] = key
+            frequency_arr[index]['stem_number'] = stem_data_dict[key]
+            index +=1
+        for i in range(index,len(frequency_arr)):
+            frequency_arr[i]['stem_word'] =''
+            frequency_arr[i]['stem_number'] = 0
+        return JsonResponse(frequency_arr,safe=False)
+
+    else :
+        return HttpResponse("please use GET")
+
+
+def spell_check(request):
+    if request.method == "GET" :
+        datas = [ w['word'] for w in list(Word_frequency.objects.values('word')) ]
+        spell = SpellChecker()
+        spell.word_frequency.load_words(datas)
+        target_word = request.GET['word']
+        misspelled = spell.unknown([target_word])
+        if len(misspelled) != 0 :
+           target_word = spell.correction(target_word)
+        arr =[]
+        arr.append({"word" : target_word})
+        return JsonResponse(arr,safe=False)
+    else:
+        return  HttpResponse("please use GET")
+
+def keyword_zipf_chart(request):
+    if request.method == "GET" :
+        target_word = request.GET['word']
+        word = ps.stem(target_word)
+
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        datas = Word_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+        frequency_arr=[]
+        index = 0
+        for key in stem_data_dict :
+            insert_data ={
+                "index" : index,
+                "word" : key,
+                "number" : stem_data_dict[key],
+            }
+            index+=1
+            frequency_arr.append(insert_data)
+        return JsonResponse(frequency_arr,safe=False)
+    else:
+        return  HttpResponse("please use GET")
+
+def keyword_zipf_list(request):
+    if request.method == "GET" :
+        target_word = request.GET['word']
+        word = ps.stem(target_word)
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        articles =[]
+        for article in article_list :
+            data = Covid_article.objects.filter(id=article)
+            insert_data = {
+                "title" : data[0].title,
+                "content" : data[0].content
+            }
+            articles.append(insert_data)
+        return JsonResponse(articles,safe=False)
+    else:
+        return  HttpResponse("please use GET")
 
 
