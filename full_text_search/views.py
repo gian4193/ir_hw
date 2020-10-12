@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse
-from full_text_search.models import Article, Inverted_index ,Covid_article, Word_frequency, Stem_frequency
+from full_text_search.models import Article, Inverted_index ,Covid_article, Word_frequency, Stem_frequency,whole_covid_token_frequency,stem_whole_covid_token_frequency
 from django.db import connection
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
@@ -336,8 +336,16 @@ def create_word_frequency_table(request):
     else :
         return HttpResponse("please use GET")
 
-
 def whole_database_frequency(request):
+    if request.method == "GET" :
+        datas = list(whole_covid_token_frequency.objects.values())
+        return JsonResponse(datas,safe=False)
+
+    else :
+        return HttpResponse("please use GET")
+
+
+def create_covid_token_frequency(request):
     if request.method == "GET" :
         datas = Word_frequency.objects.values()
         data_dict = {}
@@ -351,23 +359,21 @@ def whole_database_frequency(request):
         frequency_arr=[]
         index = 0
         for key in data_dict :
-            frequency_data = {
-                "index" : index,
-                "word" : key,
-                "number" : data_dict[key],
-            }
-            if data_dict[key] < 11 :
-                break
+            frequency_data = whole_covid_token_frequency( 
+                index = index,
+                word = key,
+                number = data_dict[key])
+            
             index += 1
             frequency_arr.append(frequency_data)
-    
-        return JsonResponse(frequency_arr,safe=False)
-    else :
-        return HttpResponse("please use GET")
+            if len(frequency_arr) == 1000 :
+                    whole_covid_token_frequency.objects.bulk_create(frequency_arr)
+                    frequency_arr=[]
+        if len(frequency_arr) != 0 :
+            whole_covid_token_frequency.objects.bulk_create(frequency_arr)
 
 
-def stem_database_frequency(request):
-    if request.method == "GET" :
+        
         datas = Stem_frequency.objects.values()
         data_dict = {}
         for data in datas :
@@ -380,15 +386,35 @@ def stem_database_frequency(request):
         frequency_arr=[]
         index = 0
         for key in data_dict :
-            frequency_data = {
-                "index" : index,
-                "word" : key,
-                "number" : data_dict[key],
-            }
+            frequency_data = stem_whole_covid_token_frequency(
+                index = index,
+                word = key,
+                number = data_dict[key],
+            )
             index += 1
             frequency_arr.append(frequency_data)
+            if len(frequency_arr) == 1000 :
+                    stem_whole_covid_token_frequency.objects.bulk_create(frequency_arr)
+                    frequency_arr=[]
+        if len(frequency_arr) != 0 :
+            stem_whole_covid_token_frequency.objects.bulk_create(frequency_arr)
+
+
+
+
+
     
-        return JsonResponse(frequency_arr,safe=False)
+        return HttpResponse("success")
+
+    else :
+        return HttpResponse("please use GET")
+
+
+def stem_database_frequency(request):
+    if request.method == "GET" :
+        datas = list(stem_whole_covid_token_frequency.objects.values())
+        return JsonResponse(datas,safe=False)
+
     else :
         return HttpResponse("please use GET")
 
@@ -475,16 +501,57 @@ def keyword_zipf_chart(request):
         frequency_arr=[]
         index = 0
         for key in stem_data_dict :
+            whole_database_number = whole_covid_token_frequency.objects.filter(word= key)
             insert_data ={
                 "index" : index,
                 "word" : key,
                 "number" : stem_data_dict[key],
+                "whole" : whole_database_number[0].number,
+                "rank" : whole_database_number[0].index,
             }
+            print(insert_data)
             index+=1
             frequency_arr.append(insert_data)
         return JsonResponse(frequency_arr,safe=False)
     else:
         return  HttpResponse("please use GET")
+
+
+
+def stem_keyword_zipf_chart(request):
+    if request.method == "GET" :
+        target_word = request.GET['word']
+        word = ps.stem(target_word)
+
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        datas = Stem_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+        frequency_arr=[]
+        index = 0
+        for key in stem_data_dict :
+            whole_database_number = stem_whole_covid_token_frequency.objects.filter(word= key)
+            insert_data ={
+                "index" : index,
+                "word" : key,
+                "number" : stem_data_dict[key],
+                "whole" : whole_database_number[0].number,
+                "rank" : whole_database_number[0].index,
+            }
+            print(insert_data)
+            index+=1
+            frequency_arr.append(insert_data)
+        return JsonResponse(frequency_arr,safe=False)
+    else:
+        return  HttpResponse("please use GET")
+
+
 
 def keyword_zipf_list(request):
     if request.method == "GET" :
@@ -494,9 +561,10 @@ def keyword_zipf_list(request):
         articles =[]
         for article in article_list :
             data = Covid_article.objects.filter(id=article)
+            content = data[0].content.replace(target_word,'<yellow-block>'+target_word+'</yellow-block>')
             insert_data = {
                 "title" : data[0].title,
-                "content" : data[0].content
+                "content" : content
             }
             articles.append(insert_data)
         return JsonResponse(articles,safe=False)

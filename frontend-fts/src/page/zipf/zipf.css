@@ -5,6 +5,7 @@
   box-sizing: border-box;
   width: '100px';
   background-color: #fff;
+  padding: '5px';
 }
 
 .tab .ant-tabs-tab{
@@ -19,3 +20,5 @@
 .ant-tabs-top > .ant-tabs-nav, .ant-tabs-bottom > .ant-tabs-nav, .ant-tabs-top > div > .ant-tabs-nav, .ant-tabs-bottom > div > .ant-tabs-nav{
   margin: 0px;
 }
+
+

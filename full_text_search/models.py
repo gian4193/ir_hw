@@ -40,6 +40,16 @@ class Stem_frequency(models.Model):
     word = models.CharField(max_length=50)
     occurrence = models.IntegerField()
 
+class whole_covid_token_frequency(models.Model):
+    index = models.IntegerField()
+    word = models.CharField(max_length=50)
+    number = models.IntegerField()
+
+class stem_whole_covid_token_frequency(models.Model):
+    index = models.IntegerField()
+    word = models.CharField(max_length=50)
+    number = models.IntegerField()
+
 
 
 

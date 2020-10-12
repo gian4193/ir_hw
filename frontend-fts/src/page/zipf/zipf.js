@@ -1,10 +1,13 @@
-import React, { useEffect, useReducer, useState } from 'react'
+import React, { useEffect, useReducer, useState, useRef } from 'react'
 import Axios from 'axios'
 import { Route, useHistory, Switch } from 'react-router-dom';
 import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import './zipf.css'
-import { Button, Drawer, Table, Menu, Dropdown, Tabs } from 'antd'
+import { Button, Drawer, Table, Menu, Dropdown, Tabs, Row, Col, Input, Space } from 'antd'
 import Search from 'antd/lib/input/Search'
+import { FlexHorizon } from '../../component/FlexHorizon'
+import '../home.css'
+import { SearchOutlined } from '@ant-design/icons';
 
 const { TabPane } = Tabs;
 export const Zipf = () => {
@@ -55,24 +58,62 @@ export const Zipf = () => {
 
     return (
         <div className='expand'>
-            <Dropdown overlay={menu} placement="bottomCenter" arrow>
-                <Button>bottomCenter</Button>
-            </Dropdown>
+            <Row>
+                <Col span={3} >
+                    {/* <Dropdown overlay={menu} placement="bottomCenter" arrow>
+                        <Button>bottomCenter</Button>
+                    </Dropdown> */}
+                    <Menu
+                        defaultSelectedKeys={['keyword_search_frequency']}
+                        mode="inline"
+                        theme="light"
+
+                    >
+                        <Menu.Item key="whole_database_frequency" onClick={jump}>whole_database</Menu.Item>
+
+                        <Menu.Item key="stem_database_frequency" onClick={jump}>stem_database</Menu.Item>
+
+                        <Menu.Item key="keyword_search_frequency" onClick={jump}>keyword_search</Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="1" ></Menu.Item>
+
+                    </Menu>
+                </Col>
+                <Col span={21} >
+                    {
+                        <div style={{ margin: '0% 2%' }}>
+                            <Whole_database url={'whole_database_frequency'} show={s1} keyword={''} ></Whole_database>
+                        </div>
+                    }
+                    {
+                        <div style={{ margin: '0% 2%' }}>
+                            <Whole_database url={'stem_database_frequency'} show={s2} keyword={''}></Whole_database>
+                        </div>
+                    }
+                    {
+                        s3 && <Origin_and_stem></Origin_and_stem>
+                    }
+                    {
+
+                        s4 && <Keyword_search></Keyword_search>
+
+                    }
+                </Col>
+            </Row>
+
             {/* <Switch>
                 <Route exact path='/zipf' component={Whole_database}></Route>
             </Switch> */}
-            {
-                <Whole_database url={'whole_database_frequency'} show={s1} keyword={''}></Whole_database>
-            }
-            {
-                <Whole_database url={'stem_database_frequency'} show={s2} keyword={''}></Whole_database>
-            }
-            {
-                s3 && <Origin_and_stem></Origin_and_stem>
-            }
-            {
-                s4 && <Keyword_search></Keyword_search>
-            }
+
 
         </div>
     )
@@ -225,23 +266,191 @@ const Origin_and_stem = () => {
     )
 }
 
+const Compare_picture = (props) => {
+    const [data, setData] = useState([])
+    useEffect(() => {
+        setData([...props.word])
+        console.log([...props.word])
+    }, [, props.word])
+    // const load_data = async () => {
+    //     let d = (await Axios.get('/full_text_search/keyword_zipf_chart/?word=' + props.keyword)).data;
+    //     setData(d)
+    //     console.log(d)
+
+    // }
+    const nullTooltip = () => {
+        return null;
+    }
+
+    const customTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${data[label].word}`}</p>
+                    <p style={{ color: '#8884d8', margin: '1px' }}>{`index : ${data[label].index}`}</p>
+                    <p style={{ color: '#82ca9d', margin: '1px' }}>{`index : ${data[label].rank}/45488`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    };
+
+    return (
+        props.show ?
+            <div>
+
+                <LineChart width={1250} height={300} data={data} syncId="anyId"
+                    margin={{ top: 20, bottom: 5, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Tooltip content={customTooltip} />
+                    <Line type='monotone' dataKey='number' stroke='#8884d8' />
+                </LineChart>
+                <LineChart width={1250} height={300} data={data} syncId="anyId"
+                    margin={{ top: 20, bottom: 5, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Tooltip content={nullTooltip} />
+                    <Line type='monotone' dataKey='whole' stroke='#82ca9d' />
+                </LineChart>
+            </div>
+            :
+            <div></div>
+    )
+}
+
+
+
+
+
 const Keyword_search = () => {
     const [data, setData] = useState([])
     const [show, setShow] = useState(false)
+    const [word_arr, setWord_arr] = useState([])
+    const [stem_arr, setStem_arr] = useState([])
     const [article, setArticle] = useState([])
+    const [table, setTable] = useState({
+        searchText: '',
+        searchedColumn: '',
+    })
 
     const columns = [
         { title: 'Title', dataIndex: 'title', key: 'title' }
     ]
+    const searchInput = useRef(null);
+
+    const getColumnSearchProps = dataIndex => ({
+        filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+            <div style={{ padding: 8 }}>
+                <Input
+                    ref={searchInput}
+                    placeholder={`Search ${dataIndex}`}
+                    value={selectedKeys[0]}
+                    onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+                    onPressEnter={() => handleSearch(selectedKeys, confirm, dataIndex)}
+                    style={{ width: 188, marginBottom: 8, display: 'block' }}
+                />
+                <Space>
+                    <Button
+                        type="primary"
+                        onClick={() => handleSearch(selectedKeys, confirm, dataIndex)}
+                        icon={<SearchOutlined />}
+                        size="small"
+                        style={{ width: 90 }}
+                    >
+                        Search
+          </Button>
+                    <Button onClick={() => handleReset(clearFilters)} size="small" style={{ width: 90 }}>
+                        Reset
+          </Button>
+                </Space>
+            </div>
+        ),
+        filterIcon: filtered => <SearchOutlined style={{ color: filtered ? '#1890ff' : undefined }} />,
+        onFilter: (value, record) =>
+            record[dataIndex]
+                ? record[dataIndex].toString().toLowerCase().includes(value.toLowerCase())
+                : '',
+        onFilterDropdownVisibleChange: visible => {
+            if (visible) {
+                setTimeout(() => searchInput.current.select());
+            }
+        },
+    });
+
+
+
+
+    const handleSearch = (selectedKeys, confirm, dataIndex) => {
+        confirm();
+        setTable({
+            searchText: selectedKeys[0],
+            searchedColumn: dataIndex,
+        });
+    };
+
+    const handleReset = clearFilters => {
+        clearFilters();
+        setTable({ searchText: '' });
+    };
+
+
+    const word_columns = [
+        {
+            title: 'Word',
+            dataIndex: 'word',
+            dataIndex: 'word',
+            key: 'word',
+            ...getColumnSearchProps('word')
+
+        },
+        {
+            title: 'subset index',
+            dataIndex: 'index',
+            width: '15%',
+
+        },
+        {
+            title: 'subset occurence',
+            dataIndex: 'number',
+            width: '15%',
+
+        },
+        {
+            title: 'index',
+            dataIndex: 'rank',
+            width: '15%',
+
+        },
+        {
+            title: 'occurence',
+            dataIndex: 'whole',
+            width: '15%',
+
+        },
+
+    ];
 
     const load_data = async (keyword) => {
         let d = (await Axios.get('/full_text_search/spell_check/?word=' + keyword)).data
         console.log(d)
         setData(d[0].word)
         load_list_data(d[0].word)
+        load_word_data(d[0].word)
+        stem_load_word_data(d[0].word)
     }
     const callback = (key) => {
-        if (key === "2") {
+        if (key === "2" || key === "4") {
             console.log(data)
             setShow(true)
         }
@@ -250,10 +459,24 @@ const Keyword_search = () => {
         let d = (await Axios.get('/full_text_search/keyword_zipf_list/?word=' + keyword)).data
         setArticle(d)
     }
+    const load_word_data = async (keyword) => {
+        let d = (await Axios.get('/full_text_search/keyword_zipf_chart/?word=' + keyword)).data;
+        setWord_arr(d)
+        console.log(d)
+    }
+
+    const stem_load_word_data = async (keyword) => {
+        let d = (await Axios.get('/full_text_search/stem_keyword_zipf_chart/?word=' + keyword)).data;
+        setStem_arr(d)
+        console.log(d)
+    }
+
+
+
 
     return (
 
-        <div>
+        <div style={{ margin: '1%' }}>
             <Search placeholder="input search text" onSearch={value => { load_data(value) }} enterButton />
             <br></br>
             <p style={{ fontSize: "12px" }}>以下為搜尋 {data} 的結果</p>
@@ -262,7 +485,10 @@ const Keyword_search = () => {
                     <Table
                         columns={columns}
                         expandable={{
-                            expandedRowRender: record => <p style={{ margin: 0 }}>{record.content}</p>
+                            expandedRowRender: record => <div
+                                className='table-detail'
+                                dangerouslySetInnerHTML={{ __html: record.content }}
+                            ></div>
                         }}
                         dataSource={article}
                         expandRowByClick={true}
@@ -270,7 +496,14 @@ const Keyword_search = () => {
                     />
                 </TabPane>
                 <TabPane tab="zipf chart" key="2" style={{ width: '100%', height: '100%' }} className='expand'>
-                    <Whole_database url={`keyword_zipf_chart/?word=${data}`} show={show} keyword={data}></Whole_database>
+                    <Compare_picture keyword={data} show={show} word={word_arr}></Compare_picture>
+                </TabPane>
+                <TabPane tab="stem zipf chart" key="4" style={{ width: '100%', height: '100%' }} className='expand'>
+                    <Compare_picture keyword={data} show={show} word={stem_arr}></Compare_picture>
+                </TabPane>
+                <TabPane tab="word list" key="3" style={{ width: '100%', height: '100%' }} className='expand'>
+                    <Table columns={word_columns} dataSource={word_arr} />
+
                 </TabPane>
             </Tabs>
         </div>

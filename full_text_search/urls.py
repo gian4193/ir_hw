@@ -15,5 +15,7 @@ urlpatterns = [
     path('stem_and_origin_frequency',views.stem_and_origin_frequency),
     path('spell_check/',views.spell_check),
     path('keyword_zipf_chart/',views.keyword_zipf_chart),
-    path('keyword_zipf_list/',views.keyword_zipf_list)
+    path('stem_keyword_zipf_chart/',views.stem_keyword_zipf_chart),
+    path('keyword_zipf_list/',views.keyword_zipf_list),
+    path('create_covid_token_frequency', views.create_covid_token_frequency)
 ]
