@@ -17,5 +17,7 @@ urlpatterns = [
     path('keyword_zipf_chart/',views.keyword_zipf_chart),
     path('stem_keyword_zipf_chart/',views.stem_keyword_zipf_chart),
     path('keyword_zipf_list/',views.keyword_zipf_list),
-    path('create_covid_token_frequency', views.create_covid_token_frequency)
+    path('create_covid_token_frequency', views.create_covid_token_frequency),
+    path('analysis_school_market_top_ten',views.analysis_school_market_top_ten),
+    path('screening',views.screening),
 ]

@@ -1,7 +1,7 @@
 import React, { useEffect, useReducer, useState, useRef } from 'react'
 import Axios from 'axios'
 import { Route, useHistory, Switch } from 'react-router-dom';
-import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ComposedChart, Scatter } from 'recharts';
 import './zipf.css'
 import { Button, Drawer, Table, Menu, Dropdown, Tabs, Row, Col, Input, Space } from 'antd'
 import Search from 'antd/lib/input/Search'
@@ -74,7 +74,7 @@ export const Zipf = () => {
                         <Menu.Item key="stem_database_frequency" onClick={jump}>stem_database</Menu.Item>
 
                         <Menu.Item key="keyword_search_frequency" onClick={jump}>keyword_search</Menu.Item>
-                        <Menu.Item key="1" ></Menu.Item>
+                        <Menu.Item key="origin_and_stem_frequency" onClick={jump}>analysis</Menu.Item>
                         <Menu.Item key="1" ></Menu.Item>
                         <Menu.Item key="1" ></Menu.Item>
                         <Menu.Item key="1" ></Menu.Item>
@@ -100,13 +100,14 @@ export const Zipf = () => {
                         </div>
                     }
                     {
-                        s3 && <Origin_and_stem></Origin_and_stem>
+                        s3 && <Analysis></Analysis>
                     }
                     {
 
                         s4 && <Keyword_search></Keyword_search>
 
                     }
+
                 </Col>
             </Row>
 
@@ -329,6 +330,364 @@ const Compare_picture = (props) => {
     )
 }
 
+const Analysis_pic = (props) => {
+    const [top, setTop] = useState([])
+    const [school, setSchool] = useState([])
+    const [market, setMarket] = useState([])
+    const [medium, setMedium] = useState([])
+    const [three, setThree] = useState([])
+    const [two, setTwo] = useState([])
+    const [bottom, setBottom] = useState([])
+    const [data, setData] = useState([])
+    const [bottomtwo, setBottomtwo] = useState([])
+    useEffect(() => {
+        setData([...props.datas].slice(0, 301))
+        setSchool([...props.school])
+        setMarket([...props.market])
+        setMedium([...props.datas].slice(301, 872))
+        setThree([...props.datas].slice(872, 1191))
+        setTwo([...props.datas].slice(1191, 1790))
+        setBottom([...props.datas].slice(1791, 2776))
+        setBottomtwo([...props.datas].slice(2776, 3758))
+        console.log([...props.school])
+    }, [, props.datas, props.school, props.market])
+
+
+    const customTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${data[label].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${data[label].index} , ${data[label].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${data[label].compare_index} , ${data[label].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+    const mediumcustomTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${medium[label - 301].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${medium[label - 301].index} , ${medium[label - 301].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${medium[label - 301].compare_index} , ${medium[label - 301].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+    const threecustomTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${three[label - 872].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${three[label - 872].index} , ${three[label - 872].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${three[label - 872].compare_index} , ${three[label - 872].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+    const twocustomTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${two[label - 1191].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${two[label - 1191].index} , ${two[label - 1191].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${two[label - 1191].compare_index} , ${two[label - 1191].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+
+    const bottomcustomTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${bottom[label - 1791].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${bottom[label - 1791].index} , ${bottom[label - 1791].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${bottom[label - 1791].compare_index} , ${bottom[label - 1791].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+    const bottomtwocustomTooltip = (prop) => {
+        const { active } = prop;
+        if (active) {
+            const { payload, label } = prop;
+            if (payload == null) {
+                return null;
+            }
+            return (
+                <div className="container ">
+                    <p className="label">{`${bottom[label - 2776].word}`}</p>
+                    <p style={{ color: 'blue', margin: '1px' }}>{`market : ${bottom[label - 2776].index} , ${bottom[label - 2776].number}`}</p>
+                    <p style={{ color: 'red', margin: '1px' }}>{`school : ${bottom[label - 2776].compare_index} , ${bottom[label - 2776].compare_freq}`}</p>
+
+                </div>
+
+            );
+            // console.log(index, number, data[index].word)
+        }
+        return null;
+    }
+
+
+
+    return (
+        props.show ?
+            <div>
+                <LineChart
+                    width={1250}
+                    height={300}
+                    data={market}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}>
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="number" stroke="red" type='monotone' dot={false} />
+
+
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={300}
+                    data={school}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}>
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="number" stroke="red" type='monotone' />
+
+
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={data}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={customTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={medium}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={mediumcustomTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={three}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={threecustomTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={two}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={twocustomTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={bottom}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={bottomcustomTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={bottomtwo}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}
+                >
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Tooltip content={bottomtwocustomTooltip} />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="compare_freq" stroke="red" type='monotone' />
+                    <Line dataKey="number" stroke="blue" type='monotone' />
+                </LineChart>
+            </div>
+            :
+            <div></div>
+    )
+}
+
+const Analysis_screening = (props) => {
+    const [data, setData] = useState([])
+    useEffect(() => {
+        setData([...props.datas])
+        console.log(...props.datas)
+    }, [, props.datas])
+
+    return (
+        props.show ?
+            <div>
+                <LineChart
+                    width={1250}
+                    height={600}
+                    data={data}
+                    margin={{
+                        top: 20, right: 80, bottom: 20, left: 20,
+                    }}>
+                    <CartesianGrid stroke="#f5f5f5" />
+                    <Legend />
+
+                    <XAxis dataKey="index" />
+                    <YAxis />
+                    <Line dataKey="fever_number" stroke="red" type='monotone' dot={false} />
+                    <Line dataKey="fatigue_number" stroke="blue" type='monotone' dot={false} />
+                    <Line dataKey="diabetes_number" stroke="green" type='monotone' dot={false} />
+                </LineChart>
+            </div>
+            :
+            <div></div>
+    )
+
+}
+
+const Analysis = () => {
+    const [data, setData] = useState([])
+    const [show, setShow] = useState(false)
+
+    useEffect(() => {
+        load_data()
+    }, [])
+
+
+
+
+    const load_data = async () => {
+        let d = (await Axios.get('/full_text_search/screening')).data
+        setData(d)
+        console.log(d)
+    }
+
+    const callback = (key) => {
+        if (key === "1") {
+            console.log(data)
+            setShow(true)
+        }
+    }
+    return (
+        <div style={{ margin: '1%' }}>
+            <br></br>
+            <Tabs type="card" defaultActiveKey='1' onChange={callback}>
+                <TabPane tab="zipf chart" key="1" style={{ width: '100%', height: '100%' }} className='expand'>
+                    <Analysis_screening show={show} datas={data} ></Analysis_screening>
+                </TabPane>
+            </Tabs>
+
+        </div>
+    )
+}
 
 
 

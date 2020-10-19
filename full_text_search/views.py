@@ -572,3 +572,146 @@ def keyword_zipf_list(request):
         return  HttpResponse("please use GET")
 
 
+def analysis_school_market_top_ten(request):
+    if request.method == "GET" :
+
+        target_word ='market'
+        compare_word = 'school'
+        word = ps.stem(target_word)
+        compare = ps.stem(compare_word)
+
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        compare_article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=compare).values('article'))]
+
+        datas = Word_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        compare_datas = Word_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in compare_article_list])).values()
+
+        stem_data_dict = {}
+        compare_data_dict ={}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+        for data in compare_datas :
+            if data['word'] in compare_data_dict :
+                compare_data_dict[data['word']] = compare_data_dict[data['word']] + data['occurrence']
+            else:
+                compare_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+        compare_data_dict = {k: v for k, v in sorted(compare_data_dict.items(), key=lambda item: item[1],reverse=True)}
+        
+        index = 0
+        for key in compare_data_dict :
+            value = compare_data_dict[key]
+            compare_data_dict[key] = []
+            compare_data_dict[key].append(value)
+            compare_data_dict[key].append(index)
+            index = index + 1
+
+        frequency_arr=[]
+        index = 0
+        for key in stem_data_dict :
+            compare_freq = -50
+            compare_index = -50
+            if key in compare_data_dict :
+                compare_freq = compare_data_dict[key][0]
+                compare_index = compare_data_dict[key][1]
+
+
+            insert_data ={
+                "index" : index,
+                "word" : key,
+                "number" : stem_data_dict[key],
+                "compare_freq" : compare_freq,
+                "compare_index" : compare_index,
+            }
+            print(insert_data)
+            frequency_arr.append(insert_data)
+            index+=1
+            
+            
+
+        return JsonResponse(frequency_arr,safe=False)
+    else:
+        return  HttpResponse("please use GET")
+
+
+def screening(request):
+    if request.method == "GET" :
+
+        word = ps.stem("fever")
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        datas = Stem_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+        frequency_arr=[]
+        index = 0
+        for key in stem_data_dict :
+            insert_data ={
+                "index" : index,
+                "fever_word" : key,
+                "fever_number" : stem_data_dict[key],
+            }
+            frequency_arr.append(insert_data)
+            index+=1
+            if index > 1000 :
+                break
+
+
+        word = ps.stem("diabetes")
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        datas = Stem_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+
+        index = 0
+        for key in stem_data_dict :
+            frequency_arr[index]['diabetes_word'] = key
+            frequency_arr[index]['diabetes_number'] = stem_data_dict[key]
+            index+=1
+            if index > 1000 :
+                break
+
+
+
+        word = ps.stem("fatigue")
+        article_list = [ s['article'] for s in list(Stem_frequency.objects.filter(word=word).values('article'))]
+        datas = Stem_frequency.objects.filter(reduce(lambda x, y: x | y, [Q(article=item) for item in article_list])).values()
+        stem_data_dict = {}
+        for data in datas :
+            if data['word'] in stem_data_dict :
+                stem_data_dict[data['word']] = stem_data_dict[data['word']] + data['occurrence']
+            else:
+                stem_data_dict[data['word']] = data['occurrence']
+
+        stem_data_dict = {k: v for k, v in sorted(stem_data_dict.items(), key=lambda item: item[1],reverse=True)}
+
+        index = 0
+        for key in stem_data_dict :
+            frequency_arr[index]['fatigue_word'] = key
+            frequency_arr[index]['fatigue_number'] = stem_data_dict[key]
+            index+=1
+            if index > 1000 :
+                break
+            
+
+
+
+        return JsonResponse(frequency_arr,safe=False)
+    else:
+        return  HttpResponse("please use GET")
+
